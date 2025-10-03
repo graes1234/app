@@ -44,11 +44,14 @@ function showPreview(file) {
   const reader = new FileReader();
   reader.onload = e => {
     $preview.onload = () => {
-      // 이미지 로드된 후 scan-line 크기 맞춤
+      // 이미지가 로드된 후 scan-line 크기 맞추기
       const scanLine = document.getElementById("scan-line");
       scanLine.style.width = $preview.clientWidth + "px";
     };
     $preview.src = e.target.result;
+
+    // 👉 새로운 이미지 업로드 시 결과창 초기화
+    $result.textContent = "";
   };
   reader.readAsDataURL(file);
 }
