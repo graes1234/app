@@ -7,8 +7,9 @@ const $btn = document.getElementById("btn");
 const $result = document.getElementById("result");
 const $loader = document.getElementById("loading");
 const $scanLine = document.querySelector(".scan-line");
+const $resultText = document.getElementById("resultText");
 
-// 드래그 앤 드롭
+// 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
     e.preventDefault();
@@ -33,7 +34,7 @@ $dropArea.addEventListener("drop", e => {
   }
 });
 
-// 파일 선택 시 미리보기 # 메모리 적게 차지
+// 파일 선택 시 미리보기
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
     showPreview($file.files[0]);
@@ -44,57 +45,67 @@ function showPreview(file) {
   const reader = new FileReader();
   reader.onload = e => {
     $preview.onload = () => {
-      // 이미지가 로드된 후 scan-line 크기 맞추기
-      const scanLine = document.getElementById("scan-line");
-      scanLine.style.width = $preview.clientWidth + "px";
+      $scanLine.style.width = $preview.clientWidth + "px";
     };
     $preview.src = e.target.result;
 
-    // 👉 새로운 이미지 업로드 시 결과창 초기화
     $result.textContent = "";
+    $resultText.innerHTML = "";
   };
   reader.readAsDataURL(file);
 }
 
-//서버 업로드 & 예측
+// 서버 업로드 & 예측
 $btn.addEventListener("click", async () => {
-  const f = $file.files[0];
-  if (!f) {
+  if (!$file.files.length) {
     alert("이미지를 선택하세요!");
     return;
   }
 
   const fd = new FormData();
-  fd.append("file", f);
+  fd.append("file", $file.files[0]);
 
   // 로딩 시작
   $loader.style.display = "inline-block";
-  $scanLine.style.display = "block"; //스캔 시작
+  $scanLine.style.display = "block";
   $result.textContent = "";
+  $resultText.innerHTML = "";
 
   try {
     const res = await fetch(API, { method: "POST", body: fd });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.error || "요청 실패");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "요청 실패");
 
-    // 백엔드 predictions 배열 구조에 맞춰 출력
-    if (json.predictions && json.predictions.length > 0) {
+    // 모델 예측 결과 출력
+    if (data.predictions && data.predictions.length > 0) {
       let text = "Top Predictions:\n";
-      json.predictions.forEach((p, idx) => {
+      data.predictions.forEach((p, idx) => {
         text += `${idx + 1}. Label: ${p.label}\n`;
       });
       $result.textContent = text;
-    } else if (json.error) {
-      $result.textContent = "백엔드 에러: " + json.error;
+    } else if (data.error) {
+      $result.textContent = "백엔드 에러: " + data.error;
     } else {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
+
+    // DB 세탁법 정보 출력
+    if (data.ko_name) {
+      $resultText.innerHTML = `
+        <h3>${data.ko_name} (${data.predicted_fabric})</h3>
+        <p>🧺 세탁법: ${data.wash_method}</p>
+        <p>🌬️ 건조법: ${data.dry_method}</p>
+        <p>⚠️ 주의사항: ${data.special_note}</p>
+      `;
+    }
+
   } catch (e) {
     $result.textContent = "에러: " + e.message;
+    $resultText.innerText = "에러: " + e.message;
   } finally {
-    // 요청 끝나면 로딩 숨김
+    // 로딩 종료
     $loader.style.display = "none";
-    $scanLine.style.display = "none"; //스캔 종료
+    $scanLine.style.display = "none";
   }
 });
 
