@@ -213,7 +213,9 @@ h1 {
   font-size: 14px;
   box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
   margin-top: 8px;
-  white-space: pre-wrap;
+  white-space: pre-wrap;    /* 줄바꿈 자동 처리 */
+  word-break: break-word;    /* 긴 단어 줄바꿈 */
+  overflow-x: auto;          /* 스크롤 처리 */
 }
 
 /* 촬영 버튼 원 */
