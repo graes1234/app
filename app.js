@@ -171,7 +171,6 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-
 // 5분마다 서버에 ping 보내기
 setInterval(async () => {
   try {
@@ -183,6 +182,5 @@ setInterval(async () => {
     console.warn("서버 ping 실패:", err);
   }
 }, 5 * 60 * 1000); // 5분 = 300,000 ms
-
 
 
