@@ -258,11 +258,12 @@ $btn.addEventListener("click", async () => {
   }
 });
 
-// 📸 카메라 촬영 (수정된 부분)
+// 카메라 촬영
+
 $cameraBtn.addEventListener("click", async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      $video: { facingMode: { ideal: "environment" } },
+      video: { facingMode: { ideal: "environment" } },
       audio: false
     });
 
@@ -273,7 +274,7 @@ $cameraBtn.addEventListener("click", async () => {
     $video.height = 200;
 
     $previewWrapper.innerHTML = "";
-    $previewWrapper.appendChild(video);
+    $previewWrapper.appendChild($video);
 
     // 비디오 메타데이터 로드 완료 대기
     await new Promise(resolve => {
@@ -284,16 +285,16 @@ $cameraBtn.addEventListener("click", async () => {
     });
 
     $captureBtn.className = "capture-circle";
-    $previewWrapper.appendChild(captureBtn);
+    $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.addEventListener("click", async () => {
-
+    
       // video 크기 로드 후 캡처
-      $canvas.width = video.videoWidth;
-      $canvas.height = video.videoHeight;
-      $canvas.getContext("2d").drawImage(video, 0, 0);
+      $canvas.width = $video.videoWidth;
+      $canvas.height = $video.videoHeight;
+      $canvas.getContext("2d").drawImage($video, 0, 0);
 
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
 
       // 스트림 종료
       stream.getTracks().forEach(track => track.stop());
@@ -306,7 +307,7 @@ $cameraBtn.addEventListener("click", async () => {
       // 스캔라인 복원
       $scanLine.className = "scan-line";
       $scanLine.id = "scan-line";
-      $previewWrapper.appendChild(scanLine);
+      $previewWrapper.appendChild($scanLine);
 
       // 바로 예측 실행
       $file._cameraBlob = blob;
