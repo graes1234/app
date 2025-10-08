@@ -251,7 +251,7 @@ h1 {
   }
 
   #preview {
-    max-height: 300px; /*120*/
+    max-height: 200px; /*120*/
     width: 100%; /**/
   }
 
