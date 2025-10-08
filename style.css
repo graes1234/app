@@ -28,7 +28,7 @@ h1 {
 /*  컨테이너 박스  */
 .container {
   width: 800px;
-  height: 650px; /*650*/
+  height: auto; /*650*/
   border-radius: 10px;
   box-shadow: 4px 4px 30px rgba(0, 0, 0, 0.2);
 
