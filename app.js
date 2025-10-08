@@ -262,7 +262,7 @@ $btn.addEventListener("click", async () => {
 $cameraBtn.addEventListener("click", async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
+      $video: { facingMode: { ideal: "environment" } },
       audio: false
     });
 
