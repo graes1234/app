@@ -118,7 +118,8 @@ $cameraBtn.addEventListener("click", async () => {
         width: { ideal: 1280 },   // 원하는 해상도
         height: { ideal: 720 },   // 세로 스트림
         aspectRatio: 16 / 9 },    //가로 세로 비율
-      //video: { facingMode: { ideal: "environment" } },
+      //video: { facingMode: { ideal: "environment" } 
+        },
       audio: false
     });
 
