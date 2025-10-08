@@ -125,8 +125,8 @@ $cameraBtn.addEventListener("click", async () => {
     $video.srcObject = stream;
     $video.autoplay = true;
     $video.playsInline = true;
-    $video.width = 400; //300
-    $video.height = 300; //200
+    $video.width = 300; //300
+    $video.height = 200; //200
 
     $previewWrapper.innerHTML = "";
     $previewWrapper.appendChild($video);
