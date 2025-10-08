@@ -241,7 +241,7 @@ h1 {
   }
 
   .container {
-    width: 90%;
+    width: 100%; //90
     height: auto;
     padding: 10px;
   }
