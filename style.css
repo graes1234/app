@@ -243,7 +243,7 @@ h1 {
   .container {
     width: 100%; /*90*/
     height: auto;
-    /*padding: 10px; /*10*/
+    padding: 10px; /*10*/
   }
 
   #preview {
