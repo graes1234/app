@@ -208,8 +208,8 @@ h1 {
   position: relative;      /* scan-line 덮을 수 있게 */
   display: inline-block;          /* flex */
   width: fit-content;      /* 이미지 크기에 딱 맞게 */
-  justify-content: center; /* 가로 중앙 정렬 */
-  align-items: center;     /* 세로 중앙 정렬 */
+  /*justify-content: center; /* 가로 중앙 정렬 */
+  /*align-items: center;     /* 세로 중앙 정렬 */
   max-width: 100%;             /* 부모 폭 전체 차지 */
 }
 
