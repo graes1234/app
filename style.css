@@ -43,7 +43,7 @@ h1 {
 /* 업로드 영역 (드롭존) */
 .header {
   flex: 1;
-  width: 95%; /* 100*/
+  width: 90%; /* 100*/
   border: 2px dashed royalblue;  /*점선 박스*/
   border-radius: 10px;
   display: flex;
@@ -138,7 +138,7 @@ h1 {
   font-size: 16px;
   cursor: pointer;
   transition: background 0.3s ease;
-  white-space: nowrap; /**/
+  white-space: nowrap;
 }
 
 .predict-btn:hover {
