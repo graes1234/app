@@ -280,42 +280,6 @@ h1 {
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
 
-/* 모바일 화면용 반응형 */
-@media (max-width: 480px) {
-  body {
-    padding-top: 20px;
-  }
-
-  h1 {
-    width: 90%;
-    font-size: 20px;
-  }
-
-  .container {
-    width: 100%; /*90*/
-    height: auto;
-    padding: 10px; /*10*/
-  }
-
-  #preview {
-    max-height: 150px; /*120*/
-    width: 100%; /**/
-  }
-
-  .capture-circle {
-    width: 50px;
-    height: 50px;
-    border-width: 3px;
-  }
-
-  .upload-btn,
-  .camera-btn,
-  .predict-btn {
-    padding: 6px 12px;
-    font-size: 14px;
-  }
-}
-
 /* 쇼핑몰 링크 영역 *
 .shopLinks {
   display: flex;
@@ -378,6 +342,56 @@ h1 {
   transform: scale(1.1);
   box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
+
+/* 모바일 화면용 반응형 */
+@media (max-width: 480px) {
+  body {
+    padding-top: 20px;
+  }
+
+  h1 {
+    width: 90%;
+    font-size: 20px;
+  }
+
+  .container {
+    width: 100%; /*90*/
+    height: auto;
+    padding: 10px; /*10*/
+  }
+
+  #preview {
+    max-height: 150px; /*120*/
+    width: 100%; /**/
+  }
+
+  .capture-circle {
+    width: 50px;
+    height: 50px;
+    border-width: 3px;
+  }
+
+  .upload-btn,
+  .camera-btn,
+  .predict-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-links {
+    flex-wrap: wrap;       /* 자동 줄바꿈 */
+    justify-content: center; /* 가운데 정렬 유지 */
+    gap: 15px;             /* 이미지 간격 축소 */
+  }
+
+  .shop-links img {
+    width: 120px;           /* 모바일에 맞는 이미지 크기 */
+    height: auto;
+  }
+}
+
 
 
 
