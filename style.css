@@ -198,7 +198,7 @@ h1 {
 /* DB 추가 코드 */
 #resultText {
   margin: 0;  /*상 우 하 좌 요소 간 */
-  padding: 8px 8px 8px 10px;    /*상 우 하 좌 내용와 경계 간 */
+  padding: 5px 5px 5px 5px;    /*상 우 하 좌 내용와 경계 간 */
   line-height: 1;     /* 줄 간격 최소화 */
   width: 100%;
   min-height: 80px;
@@ -286,6 +286,8 @@ h1 {
   }
 
   #resultText, #result, #preview {
+    margin: 5px 5px 5px 5px;  /*상 우 하 좌 요소 간 */
+    padding: 5px 5px 5px 5px;    /*상 우 하 좌 내용와 경계 간 */
     max-width: 360px;
     margin: 0 auto;
   }
