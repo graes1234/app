@@ -379,6 +379,7 @@ h1 {
   }
 }
 
+/*쇼핑몰 영역*/
 @media (max-width: 480px) {
   .shop-links {
     flex-wrap: wrap;       /* 자동 줄바꿈 */
@@ -392,4 +393,16 @@ h1 {
   }
 }
 
+/*미리보기*/
+@media (max-width: 480px) {
+  .preview-wrapper {
+    width: 100%;      /* 필요하면 화면 폭 맞춤 */
+    text-align: center; /* 이미지 중앙 정렬 */
+  }
+
+  #preview {
+    max-width: 100%;   /* 이미지가 화면 넘어가지 않도록 */
+    height: auto;
+  }
+}
 
