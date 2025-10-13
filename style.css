@@ -270,6 +270,55 @@ h1 {
   h1 {
     width: 90%;
     font-size: 20px;
+  }
+
+  .container {
+    width: 100%; /*90*/
+    height: auto;
+    padding: 10px; /*10*/
+  }
+
+  #preview {
+    max-height: 150px; /*120*/
+    width: 100%; /**/
+  }
+
+  .capture-circle {
+    width: 50px;
+    height: 50px;
+    border-width: 3px;
+  }
+
+  .upload-btn,
+  .camera-btn,
+  .predict-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-links {
+    flex-wrap: wrap;       /* 자동 줄바꿈 */
+    justify-content: center; /* 가운데 정렬 유지 */
+    gap: 15px;             /* 이미지 간격 축소 */
+  }
+
+  .shop-links img {
+    width: 120px;           /* 모바일에 맞는 이미지 크기 */
+    height: auto;
+  }
+}
+
+/* 모바일 화면용 반응형 *
+@media (max-width: 480px) {
+  body {
+    padding-top: 20px;
+  }
+
+  h1 {
+    width: 90%;
+    font-size: 20px;
     margin: 0 auto;
   }
 
@@ -278,20 +327,20 @@ h1 {
     height: auto;
     display: flex;
     flex-direction: column;
-    align-items: center;  /* 컨테이너 내부 중앙 정렬 */
+    align-items: center;  /* 컨테이너 내부 중앙 정렬 *
     padding: 10px;
     box-sizing: border-box;
   }
 
-  /* 업로드 영역, 이미지, 결과 박스, 버튼 중앙 정렬 */
+  /* 업로드 영역, 이미지, 결과 박스, 버튼 중앙 정렬 *
   .header,
   #preview,
   #result,
   #resultText,
   .predict-btn {
     width: 100%;
-    max-width: 360px;   /* 화면보다 조금 작게 */
-    margin: 0 auto;     /* 좌우 중앙 */
+    max-width: 360px;   /* 화면보다 조금 작게 *
+    margin: 0 auto;     /* 좌우 중앙 *
   }
 
   #preview {
@@ -301,12 +350,12 @@ h1 {
     display: block;
   }
 
-  /* 스캔라인 & 미리보기 래퍼 */
+  /* 스캔라인 & 미리보기 래퍼 *
   .preview-wrapper {
     width: 100%;
-    position: relative;          /* 스캔라인 덮을 수 있게 */
+    position: relative;          /* 스캔라인 덮을 수 있게 *
     display: flex;
-    justify-content: center;     /* 이미지 + 스캔라인 중앙 정렬 */
+    justify-content: center;     /* 이미지 + 스캔라인 중앙 정렬 *
     align-items: center;
     text-align: center;
   }
@@ -317,7 +366,7 @@ h1 {
     border-width: 3px;
   }
 
-  /* 버튼들 */
+  /* 버튼들 *
   .upload-btn,
   .camera-btn,
   .predict-btn {
@@ -325,25 +374,25 @@ h1 {
     font-size: 14px;
   }
 
-  /* 결과 텍스트 박스 */
+  /* 결과 텍스트 박스 *
   #resultText {
     width: 100%;
     max-width: 360px;
     margin: 0 auto;
   }
 
-  /* 쇼핑몰 링크 영역 */
+  /* 쇼핑몰 링크 영역 *
   .shop-links {
-    flex-wrap: wrap;            /* 자동 줄바꿈 */
-    justify-content: center;    /* 가운데 정렬 */
-    gap: 15px;                  /* 이미지 간격 축소 */
+    flex-wrap: wrap;            /* 자동 줄바꿈 *
+    justify-content: center;    /* 가운데 정렬 *
+    gap: 15px;                  /* 이미지 간격 축소 *
     margin-top: 20px;
   }
 
   .shop-links img {
-    width: 120px;               /* 모바일 이미지 크기 */
+    width: 120px;               /* 모바일 이미지 크기 *
     height: auto;
   }
 }
-
+*/
 
