@@ -201,10 +201,9 @@ h1 {
 /*수정 금지*/
 .preview-wrapper {
   position: relative;      /* scan-line 덮을 수 있게 */
-  display: inline-block;          
+  display: flex;          /* flex로 변경 */
   justify-content: center; /* 가로 중앙 정렬 */
   align-items: center;     /* 세로 중앙 정렬 */
-  /*width: fit-content;*/
   width: 100%;             /* 부모 폭 전체 차지 */
 }
 
