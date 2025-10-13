@@ -44,7 +44,7 @@ h1 {
 .header {
   flex: 1;
   width: 95%; /* 100*/
-  border: 2px dashed royalblue;
+  border: 2px dashed royalblue;  /*점선 박스*/
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -265,11 +265,11 @@ h1 {
 /* 모바일 화면용 반응형 */
 @media (max-width: 480px) {
   body {
-    padding-top: 20px;
+    padding-top: 20px;  #상단 여백
   }
 
   h1 {
-    width: 90%;
+    width: 90%;        #제목 폭
     font-size: 20px;
   }
 
