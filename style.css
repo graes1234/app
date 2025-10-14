@@ -6,7 +6,7 @@ body {
   align-items: flex-start;       /* 세로 정렬: 상단에서 시작 */
   min-height: 100vh;             /* 화면 전체 높이 확보 */
   margin: 0;
-  padding-top: 50px;             /* 상단 여백 */
+  padding-top: 30px;             /* 상단 여백 */
   background-color: #f0f4ff;     /* 배경색 */
 }
 
@@ -15,7 +15,7 @@ body {
   display: flex;
   flex-direction: column;        /* 세로 방향 정렬 */
   align-items: center;           /* 가운데 정렬 */
-  gap: 10px;                     /* 요소 간 간격 */
+  gap: 20px;                     /* 요소 간 간격 */
 }
 
 /* 제목  */
@@ -28,12 +28,12 @@ h1 {
 
 .container {
   width: 800px;
-  min-height: 650px; /* 고정 height 대신 최소 높이 */
+  min-height: 650px;        /* 고정 height 대신 최소 높이 */
   height: auto;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  align-items: center; /* ← 추가: 자식 요소 중앙 정렬 */
+  align-items: center;      /* 자식 요소 중앙 정렬 */
   padding: 15px;
   gap: 10px;
   background-color: rgba(0, 110, 255, 0.04);
@@ -43,7 +43,7 @@ h1 {
 /* 업로드 영역 (드롭존) */
 .header {
   flex: 1;
-  width: 90%; /* 100*/
+  width: 95%; /* 100*/
   border: 2px dashed royalblue;  /*점선 박스*/
   border-radius: 10px;
   display: flex;
@@ -84,7 +84,7 @@ h1 {
   background-color: navy;
 }
 
-/* 설명 텍스트 */
+/* 설명 텍스트, 이미지 선택 */
 .header p {
   color: black;
   font-size: 14px;
@@ -92,7 +92,7 @@ h1 {
 
 /* 미리보기 이미지 */
 #preview {
-  max-width: 100px;      /* 100%*/
+  max-width: 100%;
   max-height: 150px;  /*최대 폭 150*/
   border-radius: 6px;
   object-fit: contain;
@@ -107,7 +107,7 @@ h1 {
   min-height: 50px;
   background: #f9f9f9;
   border-radius: 6px;
-  padding: 8px;
+  padding: 6px;
   font-size: 14px;
   font-family: 'Arial', 'Helvetica', sans-serif;
   overflow-x: auto;
