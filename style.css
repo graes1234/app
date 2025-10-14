@@ -277,7 +277,7 @@ h1 {
     width: 100%; /*90*/
     height: auto;
     max-width: 360px;
-    padding: 0px; /*10*/
+    padding: 20px; /*10*/
     align-items: center;
   }
 
@@ -287,7 +287,8 @@ h1 {
   }
 
   #resultText, #result {
-    margin: 8px 8px 8px 8px;  /*상 우 하 좌 요소 간 */
+    margin 0 auto;
+    /*margin: 8px 8px 8px 8px;  /*상 우 하 좌 요소 간 */
     padding: 5px 5px 5px 5px;    /*상 우 하 좌 내용와 경계 간 */
     max-width: 360px;
     margin: 0 auto;
