@@ -57,6 +57,7 @@ function showPreview(fileOrBlob) {
     $result.textContent = "";
     $resultText.innerHTML = "";
     $shopLinks.style.display = "none"; // 새로운 이미지 올릴 때 링크 숨기기
+    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
   };
   reader.readAsDataURL(fileOrBlob);
 }
