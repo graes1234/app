@@ -171,10 +171,12 @@ h1 {
 
 .preview-wrapper {
   position: relative;      /* scan-line 덮을 수 있게 */
-  display: flex;          /* flex로 변경 */
+  display: flex;          /* flex로 고정 */
+  width: auto;          /* auto → 이미지 폭 맞춤 */
+  height: auto;
   justify-content: center; /* 가로 중앙 정렬 */
   align-items: center;     /* 세로 중앙 정렬 */
-  width: 100%;             /* 부모 폭 전체 차지 */
+  overflow: hidden;       /* 스캔 라인 및 이미지가 박스 밖으로 안 나가게 */
 }
 
 /* 스캔 라인 */
