@@ -78,6 +78,7 @@ $btn.addEventListener("click", async () => {
   $result.textContent = "";
   $resultText.innerHTML = "";
   $shopLinks.style.display = "none"; // 로딩 중엔 링크 숨김
+  document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
 
   try {
     const res = await fetch(API, { method: "POST", body: fd });
