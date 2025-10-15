@@ -36,12 +36,14 @@ $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
     $file.files = files;
+    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
     showPreview(files[0]);
   }
 });
 
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
+    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
     showPreview($file.files[0]);
   }
 });
