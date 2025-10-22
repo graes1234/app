@@ -139,7 +139,6 @@ h1 {
   border: 2px solid royalblue;
   background-color: rgba(65, 105, 225, 0.1);
 }
-
 #file {
   display: none;
 }
@@ -203,7 +202,7 @@ h1 {
 
 #resultText {
   line-height: 1;
-  maring: 0;
+  margin: 0;
 }
 
 #resultText h3,
