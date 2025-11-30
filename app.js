@@ -1,9 +1,5 @@
-// 모바일용 통합 JS, 데모 함수 + 함수로 변환
-const API = "http://localhost:10000/predict";
-const API_STREAM = "http://localhost:10000/predict_stream";
-
-//const API = "http://192.168.0.178:10000/predict";
-//const API_STREAM = "http://192.168.0.178:10000/predict_stream";
+const API = "http://192.168.0.178:10000/predict";
+const API_STREAM = "http://192.168.0.178:10000/predict_stream";
 
 const $dropArea = document.getElementById("drop-area");
 const $file = document.getElementById("file");
