@@ -28,7 +28,7 @@ let cropper;
 let $cropBtn = document.createElement("crop-btn");
 const $analysis = document.querySelector(".analysis-row"); //
 
-const $mainResult = document.getElementById("mainResult");
+//const $mainResult = document.getElementById("mainResult");
 const $mainResultBox = document.getElementById("mainResultBox");
 const $comparePanel = document.getElementById("comparePanel");
 const $compareSlots = document.getElementById("compareSlots");
@@ -106,7 +106,7 @@ let compareActive = false;
 
 // 예측 결과 UI 업데이트 함수
 function renderMainResult(resultHTML) {
-  $mainResult.innerHTML = resultHTML;
+  $mainResultBox.innerHTML = resultHTML;
 }
 
 /* 비교 해보기 버튼 클릭
