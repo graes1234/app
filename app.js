@@ -1,79 +1,169 @@
+// API 설정
 const API = "https://backend-6i2t.onrender.com/predict";
 const API_STREAM = "https://backend-6i2t.onrender.com/predict_stream";
+const API_BASE = "https://backend-6i2t.onrender.com";
+const API_guestbook = "https://backend-6i2t.onrender.com/guestbook";
 
+// DOM 요소 선택
 const $dropArea = document.getElementById("drop-area");
 const $file = document.getElementById("file");
 const $preview = document.getElementById("preview");
 const $btn = document.getElementById("btn");
+const $cropBtn = document.getElementById("crop-btn");
+const $wrongBtn = document.getElementById("wrongBtn");
+const $correctionForm = document.getElementById("correctionForm");
 const $result = document.getElementById("result");
-const $resultText = document.getElementById("resultText");
 const $loader = document.getElementById("loading");
 const $scanLine = document.querySelector(".scan-line");
+const $resultText = document.getElementById("resultText");
 const $cameraBtn = document.getElementById("camera-btn");
 const $previewWrapper = document.querySelector(".preview-wrapper");
 const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
 const $shopTitle = document.getElementById("shopTitle");
-const $shopLinks = document.getElementById("shopLinks"); //링크 요소 가져오기
-const $status = document.getElementById("status"); //
-const $btnAddCompare = document.getElementById("btn-add-compare"); //비교 버튼
-const $btnCompare = document.getElementById("btn-compare");
-const $toggle = document.getElementById("modeToggle");      // 실제 체크박스
-const $tooltip = document.getElementById("tooltip");        // 툴팁
-const $toggleWrapper = document.querySelector(".toggle-switch"); // 스위치 wrapper
+const $shopLinks = document.getElementById("shopLinks");
+const $status = document.getElementById("status");
+const $actionButtons = document.querySelector(".action-buttons");
+const $resultBox = document.getElementById("resultBox") || document.querySelector(".result-box");
+const $feedbackSection = document.getElementById("feedbackSection");
+const $toggle = document.getElementById("modeToggle");
+const $tooltip = document.getElementById("tooltip");
+const $toggleWrapper = document.querySelector(".toggle-switch");
 const $container = document.getElementById("progressBarsContainer");
-const $box = document.getElementById("message-box"); //토스트창
-let cropper;
-let $cropBtn = document.createElement("crop-btn");
-const $analysis = document.querySelector(".analysis-row"); //
-
-//const $mainResult = document.getElementById("mainResult");
-const $mainResultBox = document.getElementById("mainResultBox");
+const $predictStatus = document.getElementById("predictStatusMessage");
+const $box = document.getElementById("message-box");
 const $comparePanel = document.getElementById("comparePanel");
 const $compareSlots = document.getElementById("compareSlots");
 const $btnCompareStart = document.getElementById("btnCompareStart");
 const $btnNew = document.getElementById("btnNew");
+const $submitCorrection = document.getElementById("submitCorrection");
+const $correctLabel = document.getElementById("correctLabel");
+const $analysis = document.querySelector(".analysis-row");
 
-$btnCompareStart.style.display = "none";
-$btnNew.style.display = "none";
-
+let cropper = null;
+let currentController = null;
 const MAX_COMPARE = 4;
 
+if (!window.__fabric_slide_interval_id) {
+  window.__fabric_slide_interval_id = null;
+}
+
+window.uploadedFile = null;
+window.predictedClass = null;
+
+// 데모 모드
+let demoRunning = false;
+let idleTimer = null;
+let demoFiles = [];
+
+// 백업
+let compareHistory = [];
+let compareActive = false;
 let captureBtnRegistered = false;
 
+
 // 드래그 & 드롭
-["dragenter", "dragover"].forEach(eventName => {
-  $dropArea.addEventListener(eventName, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    $dropArea.classList.add("highlight");
+if ($dropArea) {
+  ["dragenter", "dragover"].forEach(eventName => {
+    $dropArea.addEventListener(eventName, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      $dropArea.classList.add("highlight");
+    });
   });
-});
 
-["dragleave", "drop"].forEach(eventName => {
-  $dropArea.addEventListener(eventName, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    $dropArea.classList.remove("highlight");
+  ["dragleave", "drop"].forEach(eventName => {
+    $dropArea.addEventListener(eventName, e => {
+      e.preventDefault();
+      e.stopPropagation();
+      $dropArea.classList.remove("highlight");
+    });
   });
-});
 
-$dropArea.addEventListener("drop", e => {
-  const files = e.dataTransfer.files;
-  if (files.length > 0) {
-    $file.files = files;
-    $shopTitle.style.display = "none";
-    showPreview(files[0]);
-  }
-});
+  $dropArea.addEventListener("drop", e => {
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      if ($file) $file.files = files;
+      if ($shopTitle) $shopTitle.style.display = "none";
+      showPreview(files[0]);
+    }
+  });
+}
 
-//토스트창 호출
+// 파일 업로드
+if ($file) {
+  $file.addEventListener("change", () => {
+    if ($file.files.length > 0) {
+      if ($shopTitle) $shopTitle.style.display = "none";
+      showPreview($file.files[0]);
+    }
+  });
+}
+
+
+// 미리보기 표시
+function showPreview(fileOrBlob) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    if (!$preview) return;
+
+    $preview.onload = () => {
+      if ($scanLine) {
+        $scanLine.style.width = $preview.clientWidth + "px";
+        $scanLine.style.left = $preview.offsetLeft + "px";
+      }
+      $preview.style.display = "block";
+    };
+    $preview.src = e.target.result;
+
+    if ($result) $result.textContent = "";
+    if ($resultText) $resultText.innerHTML = "";
+    if ($shopLinks) {
+      $shopLinks.style.display = "none";
+      $shopLinks.innerHTML = "";
+    }
+    if ($shopTitle) $shopTitle.style.display = "none";
+    if ($container) $container.innerHTML = "";
+    if ($status) $status.innerText = "";
+    if ($predictStatus) $predictStatus.innerText = "";
+    if ($resultBox) $resultBox.classList.remove("active");
+
+    if ($previewWrapper) {
+      $previewWrapper.classList.add("has-image");
+    }
+    if ($cropBtn) {
+      $cropBtn.style.display = "block";
+    }
+    window.uploadedFile = fileOrBlob;
+  };
+  reader.readAsDataURL(fileOrBlob);
+}
+
+// 예측 오류 말풍선 토글
+if ($wrongBtn && $correctionForm) {
+  $correctionForm.style.display = "none";
+
+  $wrongBtn.addEventListener("click", () => {
+    if ($correctionForm.style.display === "none" || $correctionForm.style.display === "") {
+      $correctionForm.style.display = "flex";
+      if ($feedbackSection) $feedbackSection.style.display = "block";
+    } else {
+      $correctionForm.style.display = "none";
+    }
+  });
+}
+
+// 토스트 창
 function showMessage(msg, duration = 2000) {
+  if (!$box) {
+    alert(msg);
+    return;
+  }
+
   $box.textContent = msg;
   $box.classList.add("show");
 
-  // 기존 타이머 제거 (겹치는 메시지 방지)
   if ($box._hideTimer) clearTimeout($box._hideTimer);
 
   $box._hideTimer = setTimeout(() => {
@@ -81,92 +171,191 @@ function showMessage(msg, duration = 2000) {
   }, duration);
 }
 
-// 현재 상태에 맞게 툴팁 내용 업데이트 함수
+// 데모/일반 모드 토글 툴팁
 function updateTooltipText() {
+  if (!$toggle || !$tooltip) return;
   if ($toggle.checked) {
     $tooltip.textContent = "데모 모드입니다!";
   } else {
     $tooltip.textContent = "일반 모드입니다! 직접 체험해보세요!";
   }
 }
-// hover 시 툴팁 나타나기 + 텍스트 갱신
-$toggleWrapper.addEventListener("mouseenter", () => {
-  updateTooltipText();
-  $tooltip.style.opacity = "1";
-});
-$toggleWrapper.addEventListener("mouseleave", () => {
-  $tooltip.style.opacity = "0";
-});
-// 체크박스 상태 변경 시 툴팁 텍스트 갱신
-$toggle.addEventListener("change", updateTooltipText);
 
-//비교 해보기
-let compareHistory = []; // { html, img } 형태로 저장
-let compareActive = false;
-
-// 예측 결과 UI 업데이트 함수
-function renderMainResult(resultHTML) {
-  $mainResultBox.innerHTML = resultHTML;
+if ($toggleWrapper && $tooltip && $toggle) {
+  $toggleWrapper.addEventListener("mouseenter", () => {
+    updateTooltipText();
+    $tooltip.style.opacity = "1";
+  });
+  $toggleWrapper.addEventListener("mouseleave", () => {
+    $tooltip.style.opacity = "0";
+  });
+  $toggle.addEventListener("change", updateTooltipText);
 }
 
-/* 비교 해보기 버튼 클릭
-if ($btnCompareStart) {
-  $btnCompareStart.addEventListener("click", () => {
-    // 결과가 비어있으면 저장 금지
-    //const hasResult = ($result && $result.innerHTML.trim()) || ($resultText && $resultText.innerHTML.trim());
-    const hasResult = ($result && $result.textContent.trim()) ||
-                  ($resultText && $resultText.innerHTML.trim());
-    if (!hasResult) {
-      showMessage("먼저 예측을 완료해주세요!");
+// 이미지 크롭 기능
+if ($cropBtn && $preview) {
+  $cropBtn.addEventListener("click", () => {
+    if (!$preview.src) {
+      alert("먼저 이미지를 업로드하세요!");
       return;
     }
-    // 현재 snapshot 생성
-    const snap = saveCurrentResultSnapshot();
-    // 같은 내용 중복 저장 방지(간단 체크)
-    const last = compareHistory[compareHistory.length - 1];
-    if (!last || last.html !== snap.html) {
-      compareHistory.push(snap);
+
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
     }
-    // 패널 열기 + 렌더
-    compareActive = true;
-    if (comparePanel) $comparePanel.style.display = "block";
-    renderCompareSlots();
-    if (compareHistory.length >= MAX_COMPARE) {
-      showMessage("최대 4개까지 기록됩니다. 새로 분석하기만 가능해요!");
-      return;
-    }
-    // 초기화
-    goToInitialState();
-    //프리뷰 제거
-    //$preview.src = "";
-    //$preview.style.display = "none";
+
+    cropper = new Cropper($preview, {
+      viewMode: 1,
+      autoCrop: false,
+      background: false,
+      modal: true,
+      movable: true,
+      zoomable: true,
+
+      cropend() {
+        cropper.getCroppedCanvas().toBlob((blob) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            $preview.src = e.target.result;
+
+            if ($file) $file._cameraBlob = blob;
+            window.uploadedFile = blob;
+
+            cropper.destroy();
+            cropper = null;
+          };
+          reader.readAsDataURL(blob);
+        }, "image/png");
+      }
+    });
   });
 }
 
-// 새로 분석하기 버튼
-$btnNew.addEventListener("click", () => {
-  compareActive = false;
-  compareHistory = [];
-  $comparePanel.style.display = "none";
-  renderCompareSlots();
-  goToInitialState();
-  // 프리뷰 제거
-  //$preview.src = "";
-  //$preview.style.display = "none";
-});*/
+// 초기화 함수
+function goToInitialState() {
+  if ($file) {
+    $file.value = "";
+    $file._cameraBlob = null;
+  }
 
-// 비교해보기 버튼 핸들러 함수
+  if ($preview) {
+    $preview.src = "";
+    $preview.style.display = "none";
+  }
+
+  if ($previewWrapper) {
+    $previewWrapper.innerHTML = "";
+    $previewWrapper.appendChild($preview);
+    if ($scanLine) $previewWrapper.appendChild($scanLine);
+    if ($cropBtn) $previewWrapper.appendChild($cropBtn);
+    $previewWrapper.classList.remove("has-image");
+  }
+
+  if ($result) $result.innerHTML = "";
+  if ($container) $container.innerHTML = "";
+  if ($resultText) $resultText.innerHTML = "";
+  if ($resultBox) $resultBox.classList.remove("active");
+
+  if ($btnCompareStart) $btnCompareStart.style.display = "none";
+  if ($btnNew) $btnNew.style.display = "none";
+
+  if ($feedbackSection) $feedbackSection.style.display = "none";
+  if ($correctionForm) $correctionForm.style.display = "none";
+
+  if ($shopLinks) {
+    $shopLinks.style.display = "none";
+    $shopLinks.innerHTML = "";
+  }
+  if ($shopTitle) $shopTitle.style.display = "none";
+
+  if ($status) $status.innerText = "";
+  if ($predictStatus) $predictStatus.innerText = "";
+
+  if (window.__fabric_slide_interval_id) {
+    clearInterval(window.__fabric_slide_interval_id);
+    window.__fabric_slide_interval_id = null;
+  }
+  window.uploadedFile = null;
+  window.predictedClass = null;
+
+  if ($comparePanel)
+    $comparePanel.style.display = "none";
+}
+
+
+// 백업 시스템
+if ($btnCompareStart) $btnCompareStart.style.display = "none";
+if ($btnNew) $btnNew.style.display = "none";
+
+function saveCurrentResultSnapshot() {
+  const imgSrc = $preview?.src || "";
+
+  const html = `
+    <div class="raw-result">${$result.innerHTML}</div>
+    <div class="raw-bars">${$container.innerHTML}</div>
+    <div class="raw-text">${$resultText.innerHTML}</div>
+  `;
+
+  return { img: imgSrc, html };
+}
+
+function renderCompareSlots() {
+  $compareSlots.innerHTML = "";
+
+  if (compareHistory.length === 0) {
+    $comparePanel.style.display = "none";
+    return;
+  }
+
+  $comparePanel.style.cssText = `
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 24px 0 !important;
+    padding: 16px !important;
+    overflow-x: auto !important;
+    clear: both !important;
+  `;  
+  
+  $comparePanel.style.display = "block";
+
+  compareHistory.forEach((item, idx) => {
+    const slot = document.createElement("div");
+    slot.className = "compare-card";
+
+    slot.innerHTML = `
+      <button class="compare-delete" data-idx="${idx}">×</button>
+      <div class="compare-image">
+        <img src="${item.img}" />
+      </div>
+      <div class="compare-result">${item.html}</div>
+    `;
+
+    $compareSlots.appendChild(slot);
+  });
+
+  document.querySelectorAll(".compare-delete").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = Number(btn.dataset.idx);
+      compareHistory.splice(i, 1);
+      renderCompareSlots();
+    });
+  });
+}
+
+//백업 함수
 function handleCompareStart() {
   const hasResult =
-    ($result && $result.textContent.trim()) ||
+    ($result && $result.innerHTML.trim()) ||
     ($resultText && $resultText.innerHTML.trim());
 
   if (!hasResult) {
+    if(demoRunning) return;
     showMessage("먼저 예측을 완료해주세요!");
     return;
   }
 
-  // snapshot 저장
   const snap = saveCurrentResultSnapshot();
   const last = compareHistory[compareHistory.length - 1];
 
@@ -174,49 +363,39 @@ function handleCompareStart() {
     compareHistory.push(snap);
   }
 
-  // 비교 패널 열기
   compareActive = true;
-  if (comparePanel) $comparePanel.style.display = "block";
-
+  if ($comparePanel) $comparePanel.style.display = "block";
   renderCompareSlots();
 
   if (compareHistory.length >= MAX_COMPARE) {
     showMessage("최대 4개까지 기록됩니다. 새로 분석하기만 가능해요!");
-    return;
   }
-
-  // 초기화
-  goToInitialState();
 }
-
-//비교해보기
-if ($btnCompareStart) {
-  $btnCompareStart.addEventListener("click", handleCompareStart);
-}
-// 새로 분석하기
-if ($btnNew) {
-  $btnNew.addEventListener("click", handleNewAnalysis);
-}
-
-// 새로 분석하기 버튼 핸들러 함수
+//새로고침 함수
 function handleNewAnalysis() {
   compareActive = false;
   compareHistory = [];
   $comparePanel.style.display = "none";
-  renderCompareSlots();
+  renderCompareSlots();  
   goToInitialState();
+}
+
+//백업, 새로고침
+if ($btnCompareStart) {
+  $btnCompareStart.addEventListener("click", handleCompareStart);
+}
+if ($btnNew) {
+  $btnNew.addEventListener("click", handleNewAnalysis);
 }
 
 // 예측 후 버튼 보여주는 역할
 function onPredictCompleted(resultHTML) {
-    // resultHTML이 넘어오면 (또는 현재 DOM 요소들이 이미 채워져 있으면)
     if (resultHTML) {
-      $mainResultBox.innerHTML = resultHTML;
+      $resultBox.innerHTML = resultHTML;
     } else {
     }
-    // show action buttons
-    if (btnCompareStart) $btnCompareStart.style.display = "inline-block";
-    if (btnNew) $btnNew.style.display = "inline-block";
+    if ($btnCompareStart) $btnCompareStart.style.display = "inline-block";
+    if ($btnNew) $btnNew.style.display = "inline-block";
 }
 //비교 모드 일 때 결과 저장
 function addSnapshotIfSpace() {
@@ -228,165 +407,185 @@ function addSnapshotIfSpace() {
     renderCompareSlots();
   }
 }
-// 비교 슬롯 실제로 그리는 함수
-function renderCompareSlots() {
-  if (!compareSlots) return;
-  $compareSlots.innerHTML = "";
-  compareHistory.forEach((item, idx) => {
-    const slot = document.createElement("div");
-    slot.className = "compare-slot";
-    slot.innerHTML = `
-      ${item.html}
-    `;
-    $compareSlots.appendChild(slot);
+
+// 데모 모드
+// 랜덤 파일 선택
+function pickRandomFile() {
+  return demoFiles[Math.floor(Math.random() * demoFiles.length)];
+}
+
+// 파일 목록 로드
+async function loadDemoFiles() {
+  try {
+    const res = await fetch(`${API_BASE}/demo_files`, {
+      signal: AbortSignal.timeout(3000)
+    });
+
+    const data = await res.json();
+    demoFiles = data.files || [];
+
+  } catch (e) {
+    console.warn("demo_files 요청 실패:", e.message);
+    demoFiles = [];
+  }
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 데모 시작
+async function startDemoLoop() {
+  if (demoRunning) return;
+  demoRunning = true;
+
+  while (demoRunning) {
+    const fileName = pickRandomFile();
+    if (!fileName) break;
+
+    const blob = await fetch(`${API_BASE}/image/${encodeURIComponent(fileName)}`).then(r => r.blob());
+    showPreview(blob);
+    await runPrediction(blob);
+    await wait(10000);
+    handleCompareStart();
+    await wait(2000);
+    if (compareHistory.length >= MAX_COMPARE) {
+      handleNewAnalysis();
+    }
+  }
+}
+
+//데모 종료
+function stopDemoLoop() {
+  demoRunning = false;
+  if (currentController) {
+      currentController.abort();
+    }
+    compareActive = false;
+    compareHistory = [];
+    $comparePanel.style.display = "none";
+    handleNewAnalysis();
+    if (window.__fabric_slide_interval_id) {
+      clearInterval(window.__fabric_slide_interval_id);
+      window.__fabric_slide_interval_id = null;
+    }
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+    $status.innerText = "";
+    $loader.style.display = "none";
+}
+
+// UI 잠금
+function lockUIForDemo() {
+  if ($dropArea) $dropArea.style.pointerEvents = "none";
+  if ($file) $file.disabled = true;
+  if ($cameraBtn) $cameraBtn.style.display = "none";
+  if ($btn) $btn.style.display = "none";
+}
+//UI 잠금 해제
+function unlockUI() {
+  if ($dropArea) $dropArea.style.pointerEvents = "auto";
+  if ($file) $file.disabled = false;
+  if ($cameraBtn) $cameraBtn.style.display = "";
+  if ($btn) $btn.style.display = "inline-block";
+}
+
+// 토글 스위치로 데모 모드 제어
+if ($toggle) {
+  $toggle.addEventListener("change", () => {
+    if ($toggle.checked) {
+      lockUIForDemo();
+      startDemoLoop();
+    } else {
+      stopDemoLoop();
+      unlockUI();
+    }
   });
 }
 
-function saveCurrentResultSnapshot() {
-  const imgSrc = $preview?.src || "";
-  const html = `
-    <div class="compare-card">
-      <div class="compare-image"><img src="${imgSrc}" alt="preview" /></div>
-      <div class="compare-result">
-        <div class="raw-result">${$result.innerHTML}</div>
-        <div class="raw-bars">${$container.innerHTML}</div>
-        <div class="raw-text">${$resultText.innerHTML}</div>
-      </div>
-    </div>
-  `;
-  return { html, img: imgSrc };
-}
+// 3분 후 자동 데모 모드 시작
+function resetIdleTimer() {
+  if (idleTimer) clearTimeout(idleTimer);
 
-//초기 상태로 초기화
-function goToInitialState() {
-  // 결과 박스들 초기화
-  $result.innerHTML = "";
-  $container.innerHTML = "";
-  $resultText.innerHTML = "";
-  // 버튼 숨기기
-  $btnCompareStart.style.display = "none";
-  $btnNew.style.display = "none";
-  //쇼핑몰
-  $shopLinks.style.display = "none";
-  $shopTitle.style.display = "none";
-  $status.innerText = "";
-  $cropBtn.style.display = "none";
-  // 프리뷰 제거
-  $preview.src = "";
-  $preview.style.display = "none";
-}
-
-//이미지 변경
-function handleFileChange(e) {
-  const file = e.target.files?.[0];
-  if (!$file.files[0]) return; //file
-
-  $shopTitle.style.display = "none";
-  showPreview($file.files[0]);
-}
-
-//이미지 변경 핸들러
-$file.addEventListener("change", handleFileChange);
-
-//이미지 미리보기 + 사용자 드래그 크롭
-function showPreview(fileOrBlob) {
-  $preview.style.display = "block";
-  const reader = new FileReader();
-  reader.onload = e => {
-    $preview.src = e.target.result;
-
-    $result.textContent = ""; //리셋 부분**
-    $resultText.innerHTML = "";
-    $shopLinks.style.display = "none";
-    $shopTitle.style.display = "none";
-    $container.innerHTML = "";
-    $status.innerText = "";
-
-    // Cropper 버튼 초기화
-    if (!$cropBtn.parentNode) {
-      $cropBtn.textContent = "이미지 자르기";
-      $cropBtn.className = "upload-btn";
-      $analysis.appendChild($cropBtn);
-      //$previewWrapper.appendChild($cropBtn);
-
-      $cropBtn.addEventListener("click", () => {
-        // 기존 Cropper 제거
-        if (cropper) cropper.destroy();
-
-        // Cropper 초기화: 사용자가 드래그하여 선택
-        cropper = new Cropper($preview, {
-          viewMode: 1,
-          autoCrop: false,  // 자동 사각형 제거
-          background: false,
-          modal: true,
-          movable: true,
-          zoomable: true,
-          rotatable: false,
-          scalable: false
-        });
-
-        // 확인 버튼
-        let $confirmBtn = document.createElement("button");
-        $confirmBtn.textContent = "확인";
-        $confirmBtn.className = "predict-btn";
-        $analysis.appendChild($confirmBtn);
-        //$previewWapper.appendCHild($confirmBtn);
-        $confirmBtn.addEventListener("click", () => {
-          if (!cropper) return;
-          cropper.getCroppedCanvas().toBlob(blob => {
-            const reader2 = new FileReader();
-            reader2.onload = e2 => {
-              $preview.src = e2.target.result;
-              $file._cameraBlob = blob;
-              cropper.destroy();
-              cropper = null;
-              $confirmBtn.remove();
-            };
-            reader2.readAsDataURL(blob);
-          }, "image/png");
-        });
-      });
+  idleTimer = setTimeout(() => {
+    if ($toggle) {
+      $toggle.checked = true;
+      lockUIForDemo();
+      startDemoLoop();
+      updateTooltipText();
     }
-    $cropBtn.style.display = "inline-block";
-  };
-  reader.readAsDataURL(fileOrBlob);
+  }, 3 * 60 * 1000);
 }
 
-// 버튼 클릭 핸들러
-$btn.addEventListener("click", async () => {
-  const uploadFile = $file.files?.[0] || $file._cameraBlob;
+window.addEventListener("load", async () => {
+  try {
+    await loadDemoFiles();
+  } catch (e) {
+    if (e.name !== "AbortError") {
+      console.warn("데모 파일 로드 실패:", e);
+    }
+  }
+  resetIdleTimer();
+});
+
+window.addEventListener("click", resetIdleTimer);
+window.addEventListener("mousemove", resetIdleTimer);
+window.addEventListener("keydown", resetIdleTimer);
+
+
+// 서버 업로드 및 예측
+async function runPrediction(uploadFile) {
+  if (currentController) {
+    currentController.abort();
+  }
+  currentController = new AbortController();
+  
   if (!uploadFile) {
     alert("이미지를 선택하거나 촬영하세요!");
     return;
   }
-  await runPrediction(uploadFile);
-});
 
-//예측 함수
-async function runPrediction(uploadFile) {
-  //let uploadFile = $file.files?.[0] || $file._cameraBlob;
-  document.querySelector("#mainResultBox")?.classList.remove("active"); //제거 시
+  if ($predictStatus) $predictStatus.innerText = "예측 중...";
+
+  if ($resultBox) $resultBox.classList.remove("active");
+  if ($actionButtons) {
+    $actionButtons.classList.remove("show");
+    $actionButtons.style.display = "none";
+  }
+  if ($feedbackSection) $feedbackSection.style.display = "none";
+  if ($correctionForm) $correctionForm.style.display = "none";
+
+  if ($previewWrapper) $previewWrapper.classList.add("has-image");
+  if ($cropBtn) $cropBtn.style.display = "none";
 
   const fd = new FormData();
   fd.append("file", uploadFile);
-  $loader.style.display = "inline-block";
-  $scanLine.style.display = "block";
+  fd.append("demo", demoRunning ? "1" : "0");
 
-  $result.textContent = ""; //리셋 부분 **
-  $resultText.innerHTML = "";
-  $shopLinks.style.display = "none";
-  $shopTitle.style.display = "none";
-  $container.innerHTML = "";
-  $status.innerText = "";
+  if ($loader) $loader.style.display = "inline-block";
+  if ($scanLine) $scanLine.style.display = "block";
 
-  // 슬라이드 interval id 저장
-  if (!window.__fabric_slide_interval_id) window.__fabric_slide_interval_id = null;
+  if ($result) $result.textContent = "";
+  if ($resultText) $resultText.innerHTML = "";
+  if ($shopLinks) {
+    $shopLinks.style.display = "none";
+    $shopLinks.innerHTML = "";
+  }
+  if ($shopTitle) $shopTitle.style.display = "none";
+  if ($container) $container.innerHTML = "";
+  if ($status) $status.innerText = "";
+
+  if (window.__fabric_slide_interval_id) {
+    clearInterval(window.__fabric_slide_interval_id);
+    window.__fabric_slide_interval_id = null;
+  }
 
   try {
-    const res = await fetch(API_STREAM, { method: "POST", body: fd });
+    const res = await fetch(API_STREAM, { method: "POST", body: fd, signal: currentController.signal });
 
     if (!res.ok) {
-      // 에러 응답이면 전체 텍스트 읽고 예외 발생
       const errText = await res.text();
       throw new Error(errText || "요청 실패");
     }
@@ -401,7 +600,7 @@ async function runPrediction(uploadFile) {
 
       chunk += decoder.decode(value, { stream: true });
       let lines = chunk.split("\n");
-      chunk = lines.pop(); // 불완전한 마지막 줄은 다음 루프에서 처리
+      chunk = lines.pop();
 
       for (const line of lines) {
         const trimmed = line.trim();
@@ -415,110 +614,141 @@ async function runPrediction(uploadFile) {
           continue;
         }
 
-        // 진행 상태 표시
-        if (parsed.status) {
+        if (parsed.status && $status) {
           $status.innerText = parsed.status;
         }
 
-        // 최종 결과 표시
         if (parsed.result) {
           const r = parsed.result;
 
-          //예측 결과 표시
-            if (r?.predictions?.length) {
-              // --- 프로그래스바 생성 ---
-              let progressBarsHtml = "";
+          // 프로그래스바
+          if (r?.predictions?.length && $container) {
+            let progressBarsHtml = "";
 
-              r.predictions.forEach((p, i) => {
-                const percent = (p.score * 100).toFixed(1);
-
-                progressBarsHtml += `
-                  <div class="progress-row">
-                    <span class="progress-label">${i + 1}. ${p.label}</span>
-
-                    <div class="progress-wrapper">
-                      <div class="progressBars" data-percent="${percent}" style="width:0"></div>
-                    </div>
-
-                    <span class="progress-percent">${percent}%</span>
+            r.predictions.forEach((p) => {
+              const percent = (p.score * 100).toFixed(1);
+              progressBarsHtml += `
+                <div class="progress-row">
+                  <span class="progress-label">${p.label}</span>
+                  <div class="progress-wrapper">
+                    <div class="progress-bar" data-percent="${percent}" style="width:0"></div>
                   </div>
-                `;
+                  <span class="progress-percent">${percent}%</span>
+                </div>
+              `;
+            });
+
+            $container.innerHTML = progressBarsHtml;
+
+            $container.style.opacity = 0;
+            $container.style.transform = "translateY(20px)";
+            $container.style.transition = "opacity 0.5s, transform 0.5s";
+
+            setTimeout(() => {
+              $container.style.opacity = 1;
+              $container.style.transform = "translateY(0)";
+
+              $container.querySelectorAll(".progress-bar").forEach((bar) => {
+                const percent = bar.dataset.percent;
+                bar.style.transition = "width 1.2s cubic-bezier(.42,0,.58,1)";
+                bar.style.width = percent + "%";
               });
+            }, 100);
 
-              $container.innerHTML = progressBarsHtml;
+            if ($result) $result.textContent = "";
+          } else if (parsed.error && $result) {
+            $result.textContent = "백엔드 에러: " + parsed.error;
+          }
 
-              // 애니메이션 적용
-              $container.style.opacity = 0;
-              $container.style.transform = "translateY(20px)";
-              $container.style.transition = "opacity 0.5s, transform 0.5s";
+          // 상세 정보 + 쇼핑몰 슬라이드
+          if (r.ko_name) {
+            const koName = r.ko_name || "";
+            const predictedFabric = r.predicted_fabric || "";
+            const wash = r.wash_method || "정보 없음";
+            const dry = r.dry_method || "정보 없음";
+            const special = r.special_note || "정보 없음";
 
-              setTimeout(() => {
-                $container.style.opacity = 1;
-                $container.style.transform = "translateY(0)";
-                $container.querySelectorAll(".progressBars").forEach(($container) => { //
-                  const percent = $container.dataset.percent;
-                  $container.style.transition = "width 1.2s cubic-bezier(.42,0,.58,1)";
-                  $container.style.width = percent + "%";
-                });
-              }, 100);
-
-              // 기존 텍스트 영역 초기화
-              $result.textContent = "";
-            } else if (parsed.error) {
-              $result.textContent = "백엔드 에러: " + parsed.error;
-            } else {
-              $result.textContent = "예측 결과를 받지 못했습니다.";
+            if ($resultText) {
+              $resultText.innerHTML = `
+                <h3>${koName} (${predictedFabric})</h3>
+                <p>🧺 세탁법: ${wash}</p>
+                <p>🌬️ 건조법: ${dry}</p>
+                <p>⚠️ 주의사항: ${special}</p>
+              `;
             }
 
-          // 🔥 예측 성공 → 결과 박스 등장
-          document.querySelector("#mainResultBox")?.classList.add("active");
+            if ($resultBox) $resultBox.classList.add("active");
+            if ($actionButtons) {
+              $actionButtons.style.display = "flex";
+              $actionButtons.classList.add("show");
+            }
+            if ($feedbackSection) $feedbackSection.style.display = "block";
 
-          // 상세 정보 + 슬라이드
-          if (r.ko_name) {
-            $resultText.innerHTML = `
-              <h3>${r.ko_name} (${r.predicted_fabric || ""})</h3>
-              <p>🧺 세탁법: ${r.wash_method || "정보 없음"}</p>
-              <p>🌬️ 건조법: ${r.dry_method || "정보 없음"}</p>
-              <p>⚠️ 주의사항: ${r.special_note || "정보 없음"}</p>
-            `;
+            window.predictedClass = predictedFabric || koName;
+            window.uploadedFile = uploadFile;
 
-            const fabric = (r.predicted_fabric || "").toLowerCase();
-            const query = encodeURIComponent(r.ko_name);
+            const fabric = (predictedFabric || "").toLowerCase();
+            const query = encodeURIComponent(koName || predictedFabric);
 
-            // 브랜드별 이미지 배열
             const shopImages = {
               naver: [`./images/naver/${fabric}1.jpg`, `./images/naver/${fabric}2.jpg`],
               musinsa: [`./images/musinsa/${fabric}3.jpg`, `./images/musinsa/${fabric}4.jpg`],
               spao: [`./images/spao/${fabric}5.jpg`, `./images/spao/${fabric}6.jpg`]
             };
 
-            const shopLinksData = [
+            let spaoQuery = r.ko_name;
+            let hideSpao = false;
+
+            const spaoKeywordMap = {
+              "스판덱스": "스판",
+              "폴리에스터": "폴리",
+              "실크": "실키",
+              "모피": "플리스"
+            };
+
+            if (spaoKeywordMap[r.ko_name]) {
+              spaoQuery = spaoKeywordMap[r.ko_name];
+            }
+
+            if (r.ko_name === "벨벳") {
+              hideSpao = true;
+            }
+
+            let shopLinksData = [
               { name: "네이버 쇼핑", url: `https://search.shopping.naver.com/search/all?query=${query}`, images: shopImages.naver },
-              { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${query}`, images: shopImages.musinsa },
-              { name: "스파오", url: `https://www.spao.com/product/search.html?keyword=${query}`, images: shopImages.spao }
+              { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${query}`, images: shopImages.musinsa }
             ];
 
-            // 초기 이미지 생성
-            $shopLinks.innerHTML = shopLinksData
-              .map((shop) => `
-                <a href="${shop.url}" target="_blank" class="shop-link">
-                  ${shop.images.map((img, i) => `<img src="${img}" alt="${shop.name} 이미지 ${i+1}" class="${i === 0 ? 'active' : ''}">`).join('')}
-                </a>
-              `).join("");
+            if (!hideSpao) {
+              shopLinksData.push({
+                name: "스파오",
+                url: `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(spaoQuery)}`,
+                images: shopImages.spao
+              });
+            }
 
-            $shopLinks.style.display = "flex";
-            $shopTitle.style.display = "block";
+            if ($shopLinks) {
+              $shopLinks.innerHTML = shopLinksData
+                .map(shop => `
+                  <a href="${shop.url}" target="_blank" class="shop-link">
+                    ${shop.images.map((img, i) => `
+                      <img src="${img}" alt="${shop.name} 이미지 ${i + 1}" class="${i === 0 ? "active" : ""}">
+                    `).join("")}
+                  </a>
+                `)
+                .join("");
+              $shopLinks.style.display = "flex";
+            }
+            if ($shopTitle) $shopTitle.style.display = "block";
 
-            // 슬라이드: 이전 interval 있으면 제거
             if (window.__fabric_slide_interval_id) {
               clearInterval(window.__fabric_slide_interval_id);
               window.__fabric_slide_interval_id = null;
             }
 
             let currentSlide = 0;
-            const maxLen = Math.max(...shopLinksData.map(s => s.images.length));
-
             window.__fabric_slide_interval_id = setInterval(() => {
+              if (!$shopLinks) return;
               $shopLinks.querySelectorAll("a").forEach((aTag) => {
                 const imgs = aTag.querySelectorAll("img");
                 imgs.forEach((img, i) => {
@@ -528,47 +758,64 @@ async function runPrediction(uploadFile) {
               currentSlide++;
             }, 2000);
           }
+
+          if ($predictStatus) $predictStatus.innerText = "예측 완료!";
         }
 
-        // 서버에서 에러 형태로 보낼 경우
         if (parsed.error) {
-          $result.textContent = "백엔드 에러: " + parsed.error;
+          if ($result) $result.textContent = "백엔드 에러: " + parsed.error;
+          if ($resultText) $resultText.innerText = "백엔드 에러: " + parsed.error;
+          if ($predictStatus) $predictStatus.innerText = "에러가 발생했습니다.";
         }
       }
     }
 
-    // 남은 chunk 처리
     const trailing = chunk.trim();
     if (trailing) {
       try {
         const parsed = JSON.parse(trailing);
-        if (parsed.status) $status.innerText = parsed.status;
-        if (parsed.result) {
-        }
+        if (parsed.status && $status) $status.innerText = parsed.status;
       } catch (e) {
-        // 무시하거나 로그
-        console.warn("마지막 남은 청크 JSON 파싱 실패:", trailing);
+        console.warn("마지막 청크 JSON 파싱 실패:", trailing);
       }
     }
   } catch (e) {
-    console.error(e);  // 전체 에러 객체 보기
-    $result.textContent = "에러: " + (e.message || e);
-    $resultText.innerText = "에러: " + (e.message || e);
+    if ($result) $result.textContent = "에러: " + (e.message || e);
+    if ($resultText) $resultText.innerText = "에러: " + (e.message || e);
+    if ($predictStatus) $predictStatus.innerText = "에러가 발생했습니다.";
   } finally {
-    $loader.style.display = "none";
-    $scanLine.style.display = "none";
-    $btnCompareStart.style.display = "inline-block";
-    $btnNew.style.display = "inline-block";
+    if ($loader) $loader.style.display = "none";
+    if ($scanLine) $scanLine.style.display = "none";
+
+    if (!demoRunning) {
+      if ($btnCompareStart) $btnCompareStart.style.display = "inline-block";
+      if ($btnNew) $btnNew.style.display = "inline-block";
+    }
   }
 }
 
-// 캡처 버튼 이벤트 등록 (1회만)
+if ($btn) {
+  $btn.addEventListener("click", async () => {
+    let uploadFile =
+      ($file && $file.files && $file.files[0]) ||
+      ($file && $file._cameraBlob) ||
+      window.uploadedFile;
+
+    if (!uploadFile) {
+      alert("이미지를 선택하거나 촬영하세요!");
+      return;
+    }
+
+    await runPrediction(uploadFile);
+  });
+}
+
+// 카메라 촬영
 function registerCaptureOnce() {
   if (captureBtnRegistered) return;
   captureBtnRegistered = true;
 
   $captureBtn.addEventListener("click", async () => {
-    // 🎥 비디오 프레임 → 캔버스 → Blob 생성
     $canvas.width = $video.videoWidth;
     $canvas.height = $video.videoHeight;
     $canvas.getContext("2d").drawImage($video, 0, 0);
@@ -577,21 +824,20 @@ function registerCaptureOnce() {
       $canvas.toBlob(resolve, "image/png")
     );
 
-    // 스트림 종료
     const stream = $video.srcObject;
     if (stream) stream.getTracks().forEach(track => track.stop());
 
-    // 이미지 미리보기 표시
     showPreview(blob);
-    $previewWrapper.innerHTML = "";
-    $previewWrapper.appendChild($preview);
-    $previewWrapper.appendChild($scanLine);
+    if ($previewWrapper) {
+      $previewWrapper.innerHTML = "";
+      $previewWrapper.appendChild($preview);
+      if ($scanLine) $previewWrapper.appendChild($scanLine);
+    }
 
-    // 실제 서버 업로드용 Blob 저장
-    $file._cameraBlob = blob;
+    if ($file) $file._cameraBlob = blob;
+    window.uploadedFile = blob;
 
-    // 자동으로 예측 실행 버튼 클릭
-    $btn.click();
+    if ($btn) $btn.click();
   });
 }
 
@@ -603,46 +849,315 @@ async function startCamera() {
       audio: false
     });
 
-    // UI 리셋
-    $result.textContent = "";
-    $resultText.innerHTML = "";
-    $shopLinks.style.display = "none";
-    $shopTitle.style.display = "none";
-    $container.innerHTML = "";
-    $status.innerText = "";
+    if ($result) $result.textContent = "";
+    if ($resultText) $resultText.innerHTML = "";
+    if ($shopLinks) $shopLinks.style.display = "none";
+    if ($shopTitle) $shopTitle.style.display = "none";
+    if ($container) $container.innerHTML = "";
+    if ($status) $status.innerText = "";
+    if ($resultBox) $resultBox.classList.remove("active");
 
-    // 비디오 세팅
     $video.srcObject = stream;
     $video.autoplay = true;
     $video.playsInline = true;
-    $video.width = 300;
-    $video.height = 200;
 
-    // video DOM 적용
-    $previewWrapper.innerHTML = "";
-    $previewWrapper.appendChild($video);
+    if ($previewWrapper) {
+      $previewWrapper.innerHTML = "";
+      $previewWrapper.appendChild($video);
+    }
 
-    // 실제 재생될 때까지 기다림
-    await new Promise(resolve =>
+    await new Promise(resolve => {
       $video.onloadedmetadata = () => {
         $video.play();
         resolve();
-      }
-    );
+      };
+    });
 
-    // 캡처 버튼 표시
     $captureBtn.className = "capture-circle";
-    $previewWrapper.appendChild($captureBtn);
+    if ($previewWrapper) {
+      $previewWrapper.appendChild($captureBtn); // ★ 촬영 버튼 DOM에 추가
+    }
 
-    // 이벤트 1회 등록
     registerCaptureOnce();
-
   } catch (err) {
     alert("카메라를 사용할 수 없습니다: " + err.message);
   }
 }
-// 촬영 버튼 클릭 → startCamera 실행
-$cameraBtn.addEventListener("click", startCamera);
 
+function isMobile() {
+  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+}
 
+function handleCameraClick() {
+  if (isMobile()) {
+    const mobileInput = document.createElement("input");
+    mobileInput.type = "file";
+    mobileInput.accept = "image/*";
+    mobileInput.capture = "environment";
+    mobileInput.style.display = "none";
+
+    mobileInput.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      $file._cameraBlob = file;
+
+      showPreview(file);
+      $previewWrapper.appendChild($preview);
+    });
+
+    document.body.appendChild(mobileInput);
+    mobileInput.click();
+    document.body.removeChild(mobileInput);
+
+  } else {
+    startCamera();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  $cameraBtn.addEventListener("click", handleCameraClick);
+});
+
+// 5분마다 서버 ping
+setInterval(async () => {
+  try {
+    const res = await fetch("https://backend-6i2t.onrender.com/ping");
+    if (res.ok) {
+      console.log("서버 ping 성공");
+    }
+  } catch (err) {
+    console.warn("서버 ping 실패:", err);
+  }
+}, 5 * 60 * 1000);
+
+// 방명록
+function initGuestbook() {
+  const form = document.getElementById("contactForm");
+  const feed = document.getElementById("guestbookFeed");
+
+  if (!form || !feed) {
+    console.warn("❌ 방명록 HTML 요소 없음");
+    return false;
+  }
+
+  let statusDiv = document.querySelector('#guestbookFeed + .local-status');
+  if (!statusDiv) {
+    statusDiv = document.createElement('div');
+    statusDiv.className = 'local-status';
+    statusDiv.style.cssText = 'font-size:12px;color:#6c84ff;text-align:right;padding:8px 0;margin-top:4px;';
+    feed.parentNode.appendChild(statusDiv);
+  }
+
+  const GUESTBOOK_KEY = 'smart-texture-guestbook-v1';
+
+  // 로컬 저장
+  function saveGuestbook(data) {
+    localStorage.setItem(GUESTBOOK_KEY, JSON.stringify(data));
+  }
+
+  function loadGuestbookLocal() {
+    try {
+      return JSON.parse(localStorage.getItem(GUESTBOOK_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  // 상태 업데이트
+  function updateStatus(count) {
+    statusDiv.innerHTML = `💾 로컬 저장됨 (${count}개)`;
+  }
+
+  // 피드 렌더링
+  function renderFeed(list) {
+    feed.innerHTML = "";
+    
+    if (!list || list.length === 0) {
+      feed.innerHTML = '<li style="text-align:center;padding:20px;color:#999;">아직 방명록이 없습니다.<br>첫 번째 방명록을 남겨주세요! 😊</li>';
+      updateStatus(0);
+      return;
+    }
+
+    list.forEach(item => {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <strong>${escapeHtml(item.name)}</strong>
+        <div class="date">${formatDate(item.created_at)}</div>
+        <p>${escapeHtml(item.message)}</p>
+        ${item.contactInfo ? `<small>📧 ${escapeHtml(item.contactInfo)}</small>` : ""}
+        <button class="deleteBtn" data-id="${item.id}">🗑️ 삭제</button>
+      `;
+      feed.appendChild(li);
+    });
+
+    feed.querySelectorAll('.deleteBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (confirm('정말 삭제할까요?')) {
+          const id = parseInt(btn.dataset.id);
+    
+          fetch(`${API_guestbook}/${id}`, {
+            method: "DELETE"
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+    
+              const newList = list.filter(item => item.id !== id);
+    
+              saveGuestbook(newList); 
+              renderFeed(newList);
+    
+              showMessage(`🗑️ 삭제됨 (${newList.length}개 남음)`);
+            } else {
+              alert("삭제 실패. 서버 오류 발생.");
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            alert("서버와 통신에 실패했습니다.");
+          });
+        }
+      });
+    });
+
+    updateStatus(list.length);
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    try {
+      return new Date(dateStr).toLocaleString("ko-KR", {
+        year: "numeric", month: "short", day: "numeric",
+        hour: "2-digit", minute: "2-digit"
+      });
+    } catch {
+      return dateStr || "방금";
+    }
+  }
+
+  // 초기 로드
+  async function loadGuestbook() {
+    const localData = loadGuestbookLocal();
+    
+    if (localData.length) {
+      renderFeed(localData);
+      console.log(`💾 ${localData.length}개 로컬 복원`);
+    } else {
+      renderFeed([]);
+    }
+
+    try {
+      const res = await fetch(API_guestbook, { 
+        signal: AbortSignal.timeout(3000)
+      });
+      if (res.ok) {
+        const serverData = await res.json();
+        const merged = [...localData, ...serverData]
+          .filter((item, idx, arr) => arr.findIndex(i => i.id === item.id) === idx)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        saveGuestbook(merged.slice(0, 50));
+        renderFeed(merged);
+      }
+    } catch (err) {
+      console.warn("서버 연결 생략 → 로컬만:", err.message);
+    }
+  }
+
+  // 폼 제출
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    
+    const name = document.getElementById("name").value.trim();
+    const contactInfo = document.getElementById("contactInfo").value.trim();
+    const message = document.getElementById("message").value.trim();
+
+    if (!name || !message) {
+      alert("이름과 메모는 필수입니다!");
+      return;
+    }
+
+    const currentData = loadGuestbookLocal();
+    const newItem = {
+      id: Date.now(),
+      name, contactInfo, message,
+      created_at: new Date().toISOString()
+    };
+    
+    const updatedData = [newItem, ...currentData].slice(0, 50);
+    saveGuestbook(updatedData);
+    renderFeed(updatedData);
+
+    try {
+      await fetch(API_guestbook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, contactInfo, message })
+      });
+    } catch (err) {
+      console.warn('서버 저장 생략:', err);
+    }
+
+    form.reset();
+    showMessage("✅ 방명록 저장됨!");
+  });
+
+  loadGuestbook();
+  return true;
+}
+
+if (!window.guestbookInitialized) {
+  window.guestbookInitialized = true;
+  console.log("🚀 방명록 완벽 버전 시작");
+  
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initGuestbook);
+  } else {
+    setTimeout(initGuestbook, 100);
+  }
+}
+
+// 정정 피드백 제출
+if ($submitCorrection && $correctLabel) {
+  $submitCorrection.addEventListener("click", () => {
+    const corrected = $correctLabel.value;
+
+    if (!window.uploadedFile) {
+      alert("이미지가 없습니다. 다시 업로드해주세요.");
+      return;
+    }
+    if (!window.predictedClass) {
+      alert("예측 결과가 아직 없습니다.");
+      return;
+    }
+
+    sendFeedback(window.predictedClass, corrected, window.uploadedFile);
+  });
+}
+
+async function sendFeedback(predicted, corrected, file) {
+  const formData = new FormData();
+  formData.append("predicted", predicted);
+  formData.append("corrected", corrected);
+  formData.append("image", file);
+
+  try {
+    const res = await fetch("https://feedback-server-derm.onrender.com/feedback", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    console.log("Feedback response:", data);
+    alert("정정 정보가 성공적으로 전송되었습니다! 감사합니다 😊");
+  } catch (err) {
+    alert("정정 정보 전송 중 오류가 발생했습니다: " + err.message);
+  }
+}
 
